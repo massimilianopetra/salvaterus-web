@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
+import { seedDatabase, destroyDatabase } from '@/app/lib/actions';
 
 export default function SeedPage() {
   const [loading, setLoading] = useState(false);
@@ -14,13 +15,27 @@ export default function SeedPage() {
     setError('');
     
     try {
-      const response = await fetch('/api/seed', {
-        method: 'POST',
-      });
+      const response = await seedDatabase();
       
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Errore durante il seeding del database');
       }
+      
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDestroyDatabase = async () => {
+    setLoading(true);
+    setSuccess(false);
+    setError('');
+    
+    try {
+      await destroyDatabase();
       
       setSuccess(true);
     } catch (err) {
@@ -56,10 +71,24 @@ export default function SeedPage() {
       >
         {loading ? 'Elaborazione...' : 'Esegui Seeding'}
       </Button>
+
+      &nbsp;
+
+      <Typography sx={{ mb: 3 }}>
+        Questo pulsante cancellerà il database.
+      </Typography>
+      
+      <Button 
+        variant="contained" 
+        onClick={handleDestroyDatabase}
+        disabled={loading}
+      >
+        {loading ? 'Elaborazione...' : 'Esegui Cancellazione'}
+      </Button>
       
       {success && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          Database seeded con successo!
+          Operazione su db effettuata con successo!
         </Alert>
       )}
       
