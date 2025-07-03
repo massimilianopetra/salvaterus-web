@@ -5,7 +5,7 @@ import { Box, Typography, Tabs, Tab, Paper, Button, IconButton } from '@mui/mate
 import { Today, CalendarViewMonth, ViewWeek, ViewDay } from '@mui/icons-material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfMonth, endOfMonth, addDays, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfMonth, endOfMonth, addDays, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DbCalendarEvent } from '@/app/lib/definitions';
 import { getCalendarEvents } from '@/app/lib/actions';
