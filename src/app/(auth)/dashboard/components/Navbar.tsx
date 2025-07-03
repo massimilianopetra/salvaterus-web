@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import ThemeToggle from '@/app/components/ThemeToggle';
+import ThemeToggle from '@/app/(auth)/dashboard/components/ThemeToggle';
 import { useEffect, useState } from 'react';
 
 export default function Navbar() {

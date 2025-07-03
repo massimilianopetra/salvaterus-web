@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { CssBaseline } from '@mui/material'
 import ThemeRegistry from '@/app/ThemeRegistry';
-import Navbar from './components/Navbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,11 +19,10 @@ export default function RootLayout({
   return (
     <html lang="it">
       <body className={inter.className}>
-        <ThemeRegistry>
           <CssBaseline />
-          <Navbar />
+          <ThemeRegistry>
           <main>{children}</main>
-        </ThemeRegistry>
+          </ThemeRegistry>
       </body>
     </html>
   )
