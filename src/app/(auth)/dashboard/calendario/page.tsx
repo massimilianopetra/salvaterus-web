@@ -24,11 +24,7 @@ export default function CalendarPage() {
         const data = await getCalendarEvents();
 
         if (data) {
-          setEvents(data.map((event: any) => ({
-            ...event,
-            start: new Date(event.start),
-            end: new Date(event.end)
-          })));
+          setEvents(data)
         }
       } catch (error) {
         console.error('Error fetching events:', error);
