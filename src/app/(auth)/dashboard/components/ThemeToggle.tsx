@@ -3,7 +3,7 @@
 import { IconButton, Tooltip } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useColorMode } from '../../../ThemeRegistry';
+import { useColorMode } from '@/app/ThemeRegistry';
 
 export default function ThemeToggle() {
   const theme = useTheme();

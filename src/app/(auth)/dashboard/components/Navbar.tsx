@@ -38,7 +38,8 @@ export default function Navbar() {
         <Box className="flex items-center space-x-4">
           <Typography variant="h6">Salvaterus Web</Typography>
           <Button color="inherit" component={Link} href="/">Home</Button>
-          <Button color="inherit" component={Link} href="/calendario">Calendario</Button>
+          <Button color="inherit" component={Link} href="/dashboard/calendario">Calendario</Button>
+          {username === "admin" && (<Button color="inherit" component={Link} href="/dashboard/seed">Seed Database</Button>)}
         </Box>
         <Box className="flex items-center space-x-4">
           {username ? (
