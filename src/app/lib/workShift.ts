@@ -259,7 +259,7 @@ export function generateWorkSchedule(
   const referenceDate = new Date('2025-08-04T00:00:00');
   const referenceWeek = 8
 
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
 
   while (currentDate <= endDate) {
     // Calcola giorni passati dal 4 agosto 2025
