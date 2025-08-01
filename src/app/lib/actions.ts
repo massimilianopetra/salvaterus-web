@@ -105,3 +105,83 @@ export async function getCalendarEvents(): Promise<DbCalendarEvent[] | undefined
     throw new Error('Failed to fetch CalendarEvents.');
   }
 }
+
+export async function getThisMonthEvents(currentDate: Date): Promise<DbCalendarEvent[] | undefined> {
+  try {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // I mesi in JavaScript sono 0-based
+    
+    const event = await executeQuery<DbCalendarEvent>(`
+      SELECT * FROM events 
+      WHERE EXTRACT(YEAR FROM start) = ${year} 
+      AND EXTRACT(MONTH FROM start) = ${month}
+    `);
+    
+    if (event)
+      return event;
+    else
+      return undefined;
+  } catch (error) {
+    console.error('Failed to fetch CalendarEvents:', error);
+    throw new Error('Failed to fetch CalendarEvents.');
+  }
+}
+
+export async function addCalendarEvent(event: DbCalendarEvent): Promise<DbCalendarEvent> {
+  const result = await executeQuery<DbCalendarEvent>(
+    `INSERT INTO events (title, start, finish, is_deadline, color, description)
+     VALUES (
+       '${event.title.replace(/'/g, "''")}', 
+       '${event.start}', 
+       '${event.finish}', 
+       ${event.is_deadline}, 
+       '${event.color}',
+       '${event.description?.replace(/'/g, "''") || ''}'
+     )
+     RETURNING *`
+  );
+
+  if (!result || result.length === 0) {
+    throw new Error('Failed to insert event');
+  }
+
+  return result[0];
+}
+
+export async function deleteCalendarEvent(id: number): Promise<void> {
+  try {
+    await executeQuery(
+      `DELETE FROM events 
+       WHERE id = ${id}`
+    );
+  } catch (error) {
+    console.error('Errore durante la cancellazione:', error);
+    throw new Error('Failed to delete event');
+  }
+}
+
+export async function updateCalendarEvent(event: DbCalendarEvent): Promise<DbCalendarEvent> {
+  try {
+    const result = await executeQuery<DbCalendarEvent>(
+      `UPDATE events 
+       SET 
+         title = '${event.title.replace(/'/g, "''")}',
+         description = '${event.description?.replace(/'/g, "''") || ''}',
+         start = '${event.start}',
+         finish = '${event.finish}',
+         is_deadline = ${event.is_deadline},
+         color = '${event.color}'
+       WHERE id = ${event.id}
+       RETURNING *`
+    );
+
+    if (!result || result.length === 0) {
+      throw new Error('Evento non trovato');
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('Errore durante l\'aggiornamento:', error);
+    throw error;
+  }
+}

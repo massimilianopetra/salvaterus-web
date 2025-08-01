@@ -3,25 +3,40 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Tabs, Tab, Paper, Button, IconButton } from '@mui/material';
 import { Today, CalendarViewMonth, ViewWeek, ViewDay } from '@mui/icons-material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, DatePicker} from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfMonth, endOfMonth, addDays, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DbCalendarEvent } from '@/app/lib/definitions';
-import { getCalendarEvents } from '@/app/lib/actions';
+import { getThisMonthEvents, addCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '@/app/lib/actions';
+import EventDialog from '@/app/(auth)/dashboard/components/EventDialog';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function CalendarPage() {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<DbCalendarEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [newEvent, setNewEvent] = useState<DbCalendarEvent>({
+    id: 0,
+    title: '',
+    start: formatDate(currentDate),
+    finish: formatDate(currentDate),
+    description: '',
+    color: '#1976d2',
+    is_deadline: false
+  })
+
 
 
   // Fetch events from PostgreSQL
   useEffect(() => {
+    console.log("CALENDAR FETCH");
     const fetchEvents = async () => {
       try {
-        const data = await getCalendarEvents();
+        const data = await getThisMonthEvents(currentDate);
 
         if (data) {
           setEvents(data)
@@ -36,13 +51,29 @@ export default function CalendarPage() {
     fetchEvents();
   }, [currentDate]);
 
+  /*function formatDate(d: Date): string {
+    return d.toISOString().slice(0, 19).replace('T', ' ');
+  }*/
+
+  function formatDate(d: Date): string {
+    return d.toLocaleString('it-IT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).replace(/(\d+)\/(\d+)\/(\d+),?/, '$3-$2-$1').replace(/\./g, ':');
+  }
+
   // Verifica se un evento è attivo in un giorno specifico (per eventi multi-giorno)
   const isEventActiveOnDay = (event: DbCalendarEvent, day: Date) => {
     const eventStart = new Date(event.start); // Converti in Date
     const eventFinish = new Date(event.finish); // Converti in Date
-    return isSameDay(eventStart, day) || 
-           isSameDay(eventFinish, day) || 
-           (day > eventStart && day < eventFinish);
+    return isSameDay(eventStart, day) ||
+      isSameDay(eventFinish, day) ||
+      (day > eventStart && day < eventFinish);
   };
 
   const handleViewChange = (event: React.SyntheticEvent, newValue: 'month' | 'week' | 'day') => {
@@ -77,6 +108,72 @@ export default function CalendarPage() {
     }
   };
 
+  const handleCloseDialog = () => setOpenDialog(false);
+
+  const handleSaveEvent = async (event: DbCalendarEvent) => {
+    try {
+      
+
+      if (event.id == -1) {
+        
+        // Chiamata API per aggiornare l'evento nel database
+        const addedEvent = await addCalendarEvent(event); // scrittura su DB
+        console.log('Added:', addedEvent);
+        setEvents(prev => [...prev, addedEvent]);
+      }
+      else {
+        // Aggiorna nella lista locale
+        setEvents(prev => prev.map(e => e.id === event.id ? event : e));
+
+        // Chiamata API per aggiornare l'evento nel database
+        await updateCalendarEvent(event);
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Errore salvataggio evento:', error);
+    }
+  };
+
+  const handleNewEvent = () => {
+
+    // Apri un dialog di modifica (puoi riusare EventDialog passando l'evento)
+    const newEvent = {
+      id: -1,
+      title: '',
+      start: formatDate(currentDate),
+      finish: formatDate(currentDate),
+      description: '',
+      color: '#2196F3',
+      is_deadline: false
+    }
+    setNewEvent(newEvent);
+    setOpenDialog(true);
+  };
+
+  const handleEditEvent = (event: DbCalendarEvent) => {
+    // Apri un dialog di modifica (puoi riusare EventDialog passando l'evento)
+
+    const newEvent = {
+      id: event.id,
+      title: event.title,
+      start: event.start,
+      finish: event.finish,
+      description: event.description,
+      color: event.color,
+      is_deadline: event.is_deadline
+    }
+
+    setNewEvent(newEvent);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteEvent = async (id: number) => {
+    if (!confirm('Vuoi davvero eliminare questo evento?')) return;
+    await deleteCalendarEvent(id);
+    setEvents(prev => prev.filter(ev => ev.id !== id));
+  };
+
+  // Funzioni di rendering
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -143,8 +240,8 @@ export default function CalendarPage() {
                           fontSize: '0.75rem'
                         }}
                       >
-                        {isSameDay(event.start, day) ? 
-                          `${format(event.start, 'HH:mm')} ${event.title}` : 
+                        {isSameDay(event.start, day) ?
+                          `${format(event.start, 'HH:mm')} ${event.title}` :
                           event.title}
                       </Paper>
                     ))}
@@ -235,61 +332,84 @@ export default function CalendarPage() {
     const dayEvents = events.filter(event => {
       const eventStart = new Date(event.start);
       const eventFinish = new Date(event.finish);
-      return isSameDay(eventStart, currentDate) || 
-             isSameDay(eventFinish, currentDate) || 
-             (currentDate > eventStart && currentDate < eventFinish);
+      return isSameDay(eventStart, currentDate) ||
+        isSameDay(eventFinish, currentDate) ||
+        (currentDate > eventStart && currentDate < eventFinish);
     });
 
-  return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        {format(currentDate, 'EEEE d MMMM yyyy', { locale: it })}
-      </Typography>
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6">
+            {format(currentDate, 'EEEE d MMMM yyyy', { locale: it })}
+          </Typography>
+          <Button variant="contained" onClick={handleNewEvent}>Aggiungi Evento</Button>
+        </Box>
 
-      {dayEvents.length === 0 ? (
-        <Typography>Nessun evento programmato per oggi</Typography>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {dayEvents.map((event) => {
-            const startDate = new Date(event.start);
-            const finishDate = new Date(event.finish);
-            const durationDays = Math.ceil(
-              (finishDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-            
-            return (
-              <Paper
-                key={event.id}
-                elevation={3}
-                sx={{
-                  p: 2,
-                  borderLeft: 4,
-                  borderColor: event.is_deadline ? 'error.main' : event.color || 'primary.main'
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="h6">{event.title}</Typography>
+        {dayEvents.length === 0 ? (
+          <Typography>Nessun evento programmato per oggi</Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {dayEvents.map((event) => {
+              const startDate = new Date(event.start);
+              const finishDate = new Date(event.finish);
+              const durationDays = Math.ceil(
+                (finishDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+              );
+
+              return (
+                <Paper
+                  key={event.id}
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    borderLeft: 4,
+                    borderColor: event.color
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">{event.title}</Typography>
+                    <Box>
+                      <IconButton size="small" onClick={() => {
+                        const formattedEvent = {
+                          id: event.id,
+                          title: event.title,
+                          start: formatDate(new Date(event.start)),
+                          finish: formatDate(new Date(event.finish)),
+                          description: event.description,
+                          color: event.color,
+                          is_deadline: event.is_deadline
+                        }
+                        handleEditEvent(formattedEvent);
+
+                      }}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDeleteEvent(event.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
                   {event.is_deadline && (
                     <Typography color="error" fontWeight="bold">SCADENZA</Typography>
                   )}
-                </Box>
-                <Typography variant="subtitle1" color="text.secondary">
-                  {format(startDate, 'dd/MM/yyyy HH:mm')} - {format(finishDate, 'dd/MM/yyyy HH:mm')}
-                </Typography>
-                {!isSameDay(startDate, finishDate) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                    (Evento di {durationDays} giorni)
+                  <Typography variant="subtitle1" color="text.secondary">
+                    {format(startDate, 'dd/MM/yyyy HH:mm')} - {format(finishDate, 'dd/MM/yyyy HH:mm')}
                   </Typography>
-                )}
-                <Typography sx={{ mt: 1 }}>{event.description}</Typography>
-              </Paper>
-            );
-          })}
-        </Box>
-      )}
-    </Box>
-  );
-};
+                  {!isSameDay(startDate, finishDate) && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      (Evento di {durationDays} giorni)
+                    </Typography>
+                  )}
+                  <Typography sx={{ mt: 1 }}>{event.description}</Typography>
+                </Paper>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+    );
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={it}>
@@ -351,6 +471,16 @@ export default function CalendarPage() {
           renderDayView()
         )}
       </Box>
+
+      {/* Dialog per inserimento evento in calendario */}
+      <EventDialog
+        open={openDialog}
+        event={newEvent}
+        onClose={handleCloseDialog}
+        onSave={handleSaveEvent}
+      />
+
     </LocalizationProvider>
+
   );
 }
