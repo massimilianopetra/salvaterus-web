@@ -112,7 +112,15 @@ export async function getThisMonthEvents(currentDate: Date): Promise<DbCalendarE
     const month = currentDate.getMonth() + 1; // I mesi in JavaScript sono 0-based
     
     const event = await executeQuery<DbCalendarEvent>(`
-      SELECT * FROM events 
+      SELECT 
+        id,
+        title,
+        TO_CHAR(start, 'YYYY-MM-DD HH24:MI:SS') as start,
+        TO_CHAR(finish, 'YYYY-MM-DD HH24:MI:SS') as finish,
+        description,
+        color,
+        is_deadline
+      FROM events
       WHERE EXTRACT(YEAR FROM start) = ${year} 
       AND EXTRACT(MONTH FROM start) = ${month}
     `);
