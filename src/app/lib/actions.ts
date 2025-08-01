@@ -95,7 +95,17 @@ export async function seedDatabase() : Promise<boolean> {
 
 export async function getCalendarEvents(): Promise<DbCalendarEvent[] | undefined> {
   try {
-    const event = await executeQuery<DbCalendarEvent>(`SELECT * FROM events `);
+    const event = await executeQuery<DbCalendarEvent>(`
+      SELECT 
+        id,
+        title,
+        TO_CHAR(start, 'YYYY-MM-DD HH24:MI:SS') as start,
+        TO_CHAR(finish, 'YYYY-MM-DD HH24:MI:SS') as finish,
+        description,
+        color,
+        is_deadline
+      FROM events
+    `);
     if (event)
       return event;
     else
