@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import { Button, TextField, MenuItem } from "@mui/material";
+import { Button, TextField, MenuItem, FormControlLabel, Checkbox } from "@mui/material";
 import { DbCalendarEvent } from '@/app/lib/definitions';
 
 interface EventDialogProps {
@@ -13,13 +13,13 @@ interface EventDialogProps {
   event?: DbCalendarEvent;
 }
 
-
 const colors = [
   { value: "#2196F3", label: "Blue" },
   { value: "#4CAF50", label: "Green" },
   { value: "#D32F2F", label: "Red" },
   { value: "#FFC107", label: "Yellow" },
   { value: "#9C27B0", label: "Purple" },
+  { value: "#000000", label: "Black" },
 ];
 
 export default function EventDialog({ open, onClose, onSave, onDelete, event }: EventDialogProps) {
@@ -28,6 +28,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
   const [start, setStart] = useState("");
   const [finish, setEnd] = useState("");
   const [color, setColor] = useState(colors[0].value);
+  const [isDeadline, setIsDeadline] = useState(false);
 
   useEffect(() => {
     console.log("********** EVENT DIALOG");
@@ -39,6 +40,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
       setStart(event.start);
       setEnd(event.finish);
       setColor(event.color);
+      setIsDeadline(event.is_deadline || false);
     } else {
       const now = new Date();
       setStart(now.toISOString().slice(0, 16));
@@ -46,6 +48,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
       setColor(colors[0].value);
       setTitle("");
       setDescription("");
+      setIsDeadline(false);
     }
   }, [event]);
 
@@ -57,7 +60,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
       start: start,
       finish: finish,
       color,
-      is_deadline: false
+      is_deadline: isDeadline
     });
     onClose();
   };
@@ -79,6 +82,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
           value={start}
           onChange={(e) => setStart(e.target.value)}
           fullWidth
+          disabled={isDeadline}
         />
         <TextField
           label="End"
@@ -86,6 +90,7 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
           value={finish}
           onChange={(e) => setEnd(e.target.value)}
           fullWidth
+          disabled={isDeadline}
         />
         <TextField
           select
@@ -101,6 +106,16 @@ export default function EventDialog({ open, onClose, onSave, onDelete, event }: 
             </MenuItem>
           ))}
         </TextField>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isDeadline}
+              onChange={(e) => setIsDeadline(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="Is Deadline"
+        />
       </DialogContent>
       <DialogActions>
         {event && onDelete && (

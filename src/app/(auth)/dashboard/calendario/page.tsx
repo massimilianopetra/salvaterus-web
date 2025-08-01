@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Tabs, Tab, Paper, Button, IconButton } from '@mui/material';
 import { Today, CalendarViewMonth, ViewWeek, ViewDay } from '@mui/icons-material';
-import { LocalizationProvider, DatePicker} from '@mui/x-date-pickers';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfMonth, endOfMonth, addDays, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DbCalendarEvent } from '@/app/lib/definitions';
+import { generateWorkSchedule } from '@/app/lib/workShift';
 import { getThisMonthEvents, addCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '@/app/lib/actions';
 import EventDialog from '@/app/(auth)/dashboard/components/EventDialog';
 import EditIcon from '@mui/icons-material/Edit';
@@ -31,16 +32,27 @@ export default function CalendarPage() {
 
 
 
-  // Fetch events from PostgreSQL
+  // Fetch events from PostgreSQL and generate work shifts
   useEffect(() => {
     console.log("CALENDAR FETCH");
-    const fetchEvents = async () => {
+    const fetchEventsAndShifts = async () => {
       try {
-        const data = await getThisMonthEvents(currentDate);
+        setLoading(true);
 
-        if (data) {
-          setEvents(data)
-        }
+        // 1. Fetch events from database
+        const dbEvents = await getThisMonthEvents(currentDate);
+
+        // 2. Calculate work shifts for current month
+        const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const workShifts = generateWorkSchedule(
+          startDate,
+          7,
+        );
+
+        // 3. Combina gli eventi
+        const allEvents = [...dbEvents || [], ...workShifts];
+
+        setEvents(allEvents);
       } catch (error) {
         console.error('Error fetching events:', error);
       } finally {
@@ -48,7 +60,7 @@ export default function CalendarPage() {
       }
     };
 
-    fetchEvents();
+    fetchEventsAndShifts();
   }, [currentDate]);
 
   /*function formatDate(d: Date): string {
@@ -112,10 +124,10 @@ export default function CalendarPage() {
 
   const handleSaveEvent = async (event: DbCalendarEvent) => {
     try {
-      
+
 
       if (event.id == -1) {
-        
+
         // Chiamata API per aggiornare l'evento nel database
         const addedEvent = await addCalendarEvent(event); // scrittura su DB
         console.log('Added:', addedEvent);
@@ -370,26 +382,28 @@ export default function CalendarPage() {
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6">{event.title}</Typography>
-                    <Box>
-                      <IconButton size="small" onClick={() => {
-                        const formattedEvent = {
-                          id: event.id,
-                          title: event.title,
-                          start: formatDate(new Date(event.start)),
-                          finish: formatDate(new Date(event.finish)),
-                          description: event.description,
-                          color: event.color,
-                          is_deadline: event.is_deadline
-                        }
-                        handleEditEvent(formattedEvent);
+                    {event.id != -999 && (
+                      <Box>
+                        <IconButton size="small" onClick={() => {
+                          const formattedEvent = {
+                            id: event.id,
+                            title: event.title,
+                            start: formatDate(new Date(event.start)),
+                            finish: formatDate(new Date(event.finish)),
+                            description: event.description,
+                            color: event.color,
+                            is_deadline: event.is_deadline
+                          }
+                          handleEditEvent(formattedEvent);
 
-                      }}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDeleteEvent(event.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                        }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDeleteEvent(event.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
                   </Box>
                   {event.is_deadline && (
                     <Typography color="error" fontWeight="bold">SCADENZA</Typography>
