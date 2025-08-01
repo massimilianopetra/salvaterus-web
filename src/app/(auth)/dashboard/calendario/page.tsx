@@ -351,6 +351,7 @@ export default function CalendarPage() {
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {dayEvents.map((event) => {
+              console.log(event);
               const startDate = new Date(event.start);
               const finishDate = new Date(event.finish);
               const durationDays = Math.ceil(
