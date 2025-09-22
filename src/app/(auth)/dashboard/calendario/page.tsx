@@ -189,8 +189,8 @@ export default function CalendarPage() {
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
+    const startDate = startOfWeek(monthStart, { locale: it, weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { locale: it, weekStartsOn: 1 });
 
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     const weeks: Date[][] = [];
@@ -206,8 +206,20 @@ export default function CalendarPage() {
 
     return (
       <Box sx={{ mt: 2 }}>
+        <Typography
+          variant="h4" // più grande rispetto ad h5
+          align="center"
+          sx={{
+            mb: 3,
+            fontWeight: 'bold',
+            letterSpacing: 1,
+            textTransform: 'uppercase', // forzatura maiuscole
+          }}
+        >
+          {format(currentDate, 'MMMM yyyy', { locale: it })}
+        </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map((day) => (
+          {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((day) => (
             <Typography key={day} align="center" sx={{ width: '14%', fontWeight: 'bold' }}>
               {day}
             </Typography>
@@ -237,9 +249,11 @@ export default function CalendarPage() {
                     }
                   }}
                 >
+
                   <Typography variant="body2" align="right">
                     {format(day, 'd')}
                   </Typography>
+
                   <Box sx={{ maxHeight: 80, overflow: 'auto' }}>
                     {dayEvents.map((event) => (
                       <Paper
@@ -268,7 +282,8 @@ export default function CalendarPage() {
   };
 
   const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate);
+
+    const weekStart = startOfWeek(currentDate, { locale: it, weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
 
     const handleDayClick = (day: Date) => {
@@ -436,7 +451,7 @@ export default function CalendarPage() {
       }}>
         <Typography variant="h4">Calendario</Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          
+
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
