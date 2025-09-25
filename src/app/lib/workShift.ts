@@ -251,13 +251,18 @@ export function generateWorkSchedule(
   startDate: Date,
   weeksToGenerate: number
 ): DbCalendarEvent[] {
+
+  console.log("************* Start Date ************");
+  console.log(startDate);
+  console.log("*********************************");
+
   const events: DbCalendarEvent[] = [];
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + weeksToGenerate * 7);
 
   // Data di riferimento: 4 agosto 2025 (Lunedì, inizio settimana 8)
   const referenceDate = new Date('2025-08-04T00:00:00');
-  const referenceWeek = 8
+  const referenceWeek = 7
 
   const currentDate = new Date(startDate);
 
@@ -269,15 +274,17 @@ export function generateWorkSchedule(
     const weeksPassed = Math.floor(diffInDays / 7);
     const currentWorkWeek = ((referenceWeek + weeksPassed) % 24);
 
-    console.log(currentDate, diffInDays, weeksPassed, currentWorkWeek)
+    
 
-    const pattern = wifeWorkPatterns[currentWorkWeek - 1]; // -1 perché l'array è 0-based
+    const pattern = wifeWorkPatterns[currentWorkWeek]; // -1 perché l'array è 0-based
 
     // Converti il giorno della settimana (0=Lunedì, 6=Domenica)
     const dayOfWeek = (currentDate.getDay() + 6) % 7;
 
     let dayShifts: WorkShift[] = [];
 
+    //console.log(currentDate, diffInDays, weeksPassed, currentWorkWeek,dayOfWeek)
+    //console.log(pattern)
     switch (dayOfWeek) {
       case 0: dayShifts = pattern.monday || []; break;
       case 1: dayShifts = pattern.tuesday || []; break;
@@ -311,6 +318,10 @@ export function generateWorkSchedule(
 
     currentDate.setDate(currentDate.getDate() + 1);
   }
+
+  console.log("************* Events ************")
+  //console.log(events);
+  console.log("*********************************")
 
   return events;
 }
