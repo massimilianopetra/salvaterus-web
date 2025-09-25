@@ -310,7 +310,7 @@ export function generateWorkSchedule(
         title: 'Turno di lavoro',
         start: startTime.toISOString(),
         finish: endTime.toISOString(),
-        description: `Turno settimana ${currentWorkWeek}`,
+        description: `Turno settimana ${currentWorkWeek+1}`,
         color: endTime.getHours() < 14 ? '#4CAF50' : '#000000', // Verde se prima delle 14, altrimenti nero
         is_deadline: false
       });
