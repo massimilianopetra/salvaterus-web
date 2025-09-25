@@ -292,65 +292,80 @@ export default function CalendarPage() {
     };
 
     return (
-      <Box sx={{ display: 'flex', mt: 2 }}>
-        {days.map((day, index) => {
-          const dayEvents = events.filter(event => isEventActiveOnDay(event, day));
+      <Box sx={{ mt: 2 }}>
+        <Typography
+          variant="h4" // più grande rispetto ad h5
+          align="center"
+          sx={{
+            mb: 3,
+            fontWeight: 'bold',
+            letterSpacing: 1,
+            textTransform: 'uppercase', // forzatura maiuscole
+          }}
+        >
+          {format(weekStart, 'MMMM yyyy', { locale: it })}
+        </Typography>
+        <Box sx={{ display: 'flex', mt: 2 }}>
 
-          return (
-            <Box key={index} sx={{ width: '14.28%' }}>
-              <Paper
-                elevation={1}
-                onClick={() => handleDayClick(day)}
-                sx={{
-                  p: 1,
-                  bgcolor: isSameDay(day, new Date()) ? 'action.selected' : 'background.paper',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  }
-                }}
-              >
-                <Typography variant="body1" align="center" fontWeight="bold">
-                  {format(day, 'EEE d', { locale: it })}
-                </Typography>
-                <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  {dayEvents.map((event) => (
-                    <Paper
-                      key={`${event.id}-${day.toISOString()}`}
-                      onClick={() => handleDayClick(typeof event.start === 'string' ? parseISO(event.start) : event.start)}
-                      sx={{
-                        p: 1,
-                        mb: 1,
-                        bgcolor: event.color || 'primary.light',
-                        color: 'common.white',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          opacity: 0.9
-                        }
-                      }}
-                    >
-                      {isSameDay(event.start, day) ? (
-                        <>
-                          <Typography variant="body2">
-                            {format(event.start, 'HH:mm')} - {format(event.finish, 'HH:mm')}
+          {days.map((day, index) => {
+            const dayEvents = events.filter(event => isEventActiveOnDay(event, day));
+
+            return (
+              <Box key={index} sx={{ width: '14.28%' }}>
+                <Paper
+                  elevation={1}
+                  onClick={() => handleDayClick(day)}
+                  sx={{
+                    p: 1,
+                    bgcolor: isSameDay(day, new Date()) ? 'action.selected' : 'background.paper',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    }
+                  }}
+                >
+                  <Typography variant="body1" align="center" fontWeight="bold">
+                    {format(day, 'EEE d', { locale: it })}
+                  </Typography>
+                  <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                    {dayEvents.map((event) => (
+                      <Paper
+                        key={`${event.id}-${day.toISOString()}`}
+                        onClick={() => handleDayClick(typeof event.start === 'string' ? parseISO(event.start) : event.start)}
+                        sx={{
+                          p: 1,
+                          mb: 1,
+                          bgcolor: event.color || 'primary.light',
+                          color: 'common.white',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            opacity: 0.9
+                          }
+                        }}
+                      >
+                        {isSameDay(event.start, day) ? (
+                          <>
+                            <Typography variant="body2">
+                              {format(event.start, 'HH:mm')} - {format(event.finish, 'HH:mm')}
+                            </Typography>
+                            <Typography variant="subtitle2">{event.title}</Typography>
+                          </>
+                        ) : (
+                          <Typography variant="subtitle2">{event.title} (continua)</Typography>
+                        )}
+                        {event.is_deadline && (
+                          <Typography variant="caption" sx={{ color: 'error.main' }}>
+                            SCADENZA
                           </Typography>
-                          <Typography variant="subtitle2">{event.title}</Typography>
-                        </>
-                      ) : (
-                        <Typography variant="subtitle2">{event.title} (continua)</Typography>
-                      )}
-                      {event.is_deadline && (
-                        <Typography variant="caption" sx={{ color: 'error.main' }}>
-                          SCADENZA
-                        </Typography>
-                      )}
-                    </Paper>
-                  ))}
-                </Box>
-              </Paper>
-            </Box>
-          );
-        })}
+                        )}
+                      </Paper>
+                    ))}
+                  </Box>
+                </Paper>
+              </Box>
+            );
+          })}
+        </Box>
       </Box>
     );
   };
